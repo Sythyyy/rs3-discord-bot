@@ -78,6 +78,7 @@ Never commit `.env`. The repository ignores it and includes only `.env.example`.
 
 ```bash
 npm run migrate
+npm run seed:agility
 npm run register-commands
 npm run dev
 ```

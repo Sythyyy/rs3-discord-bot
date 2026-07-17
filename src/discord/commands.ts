@@ -18,4 +18,16 @@ export const commandDefinitions = [
     .addStringOption((option) => option.setName('item').setDescription('Item key, such as driftwood.').setRequired(true))
     .addIntegerOption((option) => option.setName('quantity').setDescription('Number to sell.').setRequired(true).setMinValue(1)),
   new SlashCommandBuilder().setName('help').setDescription('Learn the Phase 1 commands.'),
+  new SlashCommandBuilder()
+    .setName('agility')
+    .setDescription('Train and manage the Agility skill.')
+    .addSubcommand((sub) => sub.setName('courses').setDescription('Browse locally approved Agility courses.').addBooleanOption((option) => option.setName('eligible_only').setDescription('Show only courses you can currently use.')))
+    .addSubcommand((sub) => sub.setName('train').setDescription('Start an Agility course.').addStringOption((option) => option.setName('course').setDescription('Course to train.').setRequired(true)))
+    .addSubcommand((sub) => sub.setName('status').setDescription('Show Agility XP and active training.'))
+    .addSubcommand((sub) => sub.setName('claim').setDescription('Claim a completed Agility activity.'))
+    .addSubcommand((sub) => sub.setName('guide').setDescription('Recommend the best verified eligible course.').addIntegerOption((option) => option.setName('target_level').setDescription('Optional future target level.').setMinValue(1).setMaxValue(120))),
+  new SlashCommandBuilder()
+    .setName('admin')
+    .setDescription('Administrator-only bot operations.')
+    .addSubcommandGroup((group) => group.setName('agility').setDescription('Manage the local Agility catalogue.').addSubcommand((sub) => sub.setName('refresh-data').setDescription('Create a Wiki data refresh preview; does not publish changes.'))),
 ].map((command) => command.toJSON());

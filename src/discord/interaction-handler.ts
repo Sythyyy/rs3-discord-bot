@@ -2,10 +2,12 @@ import { EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
 
 import { activities } from '../content/game-content.js';
 import type { GameService } from '../application/game-service.js';
+import type { AgilityService } from '../application/agility/agility-service.js';
+import { assessEligibility } from '../domain/agility/course.js';
 
 const errorEmbed = (description: string) => new EmbedBuilder().setColor(0xdc2626).setDescription(description);
 
-export async function handleCommand(interaction: ChatInputCommandInteraction, game: GameService): Promise<void> {
+export async function handleCommand(interaction: ChatInputCommandInteraction, game: GameService, agility: AgilityService): Promise<void> {
   try {
     switch (interaction.commandName) {
       case 'start': {
@@ -40,6 +42,13 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, ga
       case 'help':
         await interaction.reply({ embeds: [helpEmbed()] });
         return;
+      case 'agility':
+        await handleAgility(interaction, agility);
+        return;
+      case 'admin':
+        if (!interaction.memberPermissions?.has('Administrator')) throw new Error('Administrator permission is required.');
+        await interaction.reply({ embeds: [new EmbedBuilder().setColor(0xeab308).setTitle('Agility refresh preview').setDescription('Refresh previews are intentionally disabled until the Wiki source can be retrieved and manually reviewed in this deployment. Player commands never fetch the Wiki.')], ephemeral: true });
+        return;
       default:
         await interaction.reply({ embeds: [errorEmbed('This command is not implemented yet.')], ephemeral: true });
     }
@@ -49,6 +58,20 @@ export async function handleCommand(interaction: ChatInputCommandInteraction, ga
     if (interaction.deferred || interaction.replied) await interaction.followUp(payload);
     else await interaction.reply(payload);
   }
+}
+
+async function handleAgility(interaction: ChatInputCommandInteraction, agility: AgilityService): Promise<void> {
+  const subcommand = interaction.options.getSubcommand();
+  if (subcommand === 'courses') {
+    const data = await agility.listCourses(interaction.user.id); const eligibleOnly = interaction.options.getBoolean('eligible_only') ?? false;
+    const courses = eligibleOnly ? data.courses.filter((course) => assessEligibility(course, data.level).eligible) : data.courses;
+    const lines = courses.map((course) => { const eligibility = assessEligibility(course, data.level); return `**${course.name}** — Lv. ${course.requiredAgilityLevel} • ${course.location}\n${eligibility.eligible ? '✅ Eligible' : `🔒 ${eligibility.reasons.join(' ')}`}\nRewards: ${course.rewardSummary || 'None confirmed'} • Source verified: ${course.sourceRevisionOrVerifiedAt}`; });
+    await interaction.reply({ embeds: [new EmbedBuilder().setColor(0x2563eb).setTitle(`Agility courses (your level: ${data.level})`).setDescription(lines.join('\n\n') || 'No courses match that filter.')] }); return;
+  }
+  if (subcommand === 'train') { const activity = await agility.start(interaction.user.id, interaction.options.getString('course', true)); await interaction.reply({ embeds: [new EmbedBuilder().setColor(0x7c3aed).setTitle(`${activity.course.name} started`).setDescription(`Bot reward: **${activity.course.botXpPerActivity.toString()} Agility XP**. Complete <t:${Math.floor(activity.completesAt.getTime() / 1000)}:R>. This is bot-balanced XP, not RS3 XP.`)], ephemeral: true }); return; }
+  if (subcommand === 'claim') { const course = await agility.claim(interaction.user.id); await interaction.reply({ embeds: [new EmbedBuilder().setColor(0x22c55e).setTitle('Agility activity claimed').setDescription(`You gained **${course.botXpPerActivity.toString()} Agility XP** from ${course.name}.`)], ephemeral: true }); return; }
+  if (subcommand === 'guide') { const guide = await agility.guide(interaction.user.id); const description = guide.course ? `Recommended bot course: **${guide.course.name}**\nBot efficiency: ${(Number(guide.course.botXpPerActivity) / guide.course.botDurationSeconds).toFixed(2)} XP/sec.\nWiki RS3 XP/hour: ${guide.course.estimatedBaseXpPerHourMin === null ? 'No reviewed estimate available.' : `estimated ${guide.course.estimatedBaseXpPerHourMin}–${guide.course.estimatedBaseXpPerHourMax}/hour`}` : 'No verified eligible course is available.'; await interaction.reply({ embeds: [new EmbedBuilder().setColor(0x2563eb).setTitle(`Agility guide (level ${guide.level})`).setDescription(description)] }); return; }
+  const status = await agility.status(interaction.user.id); const description = status.course ? `Training **${status.course.name}**; finishes <t:${Math.floor(status.completesAt!.getTime() / 1000)}:R>. Expected bot reward: ${status.course.botXpPerActivity.toString()} XP.` : 'No Agility course is active.'; await interaction.reply({ embeds: [new EmbedBuilder().setColor(0x2563eb).setTitle('Agility status').setDescription(`Level **${status.level}** • **${status.xp.toString()} XP**\n${description}`)], ephemeral: true });
 }
 
 async function handleMinion(interaction: ChatInputCommandInteraction, game: GameService): Promise<void> {
