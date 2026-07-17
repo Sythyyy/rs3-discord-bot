@@ -1,4 +1,4 @@
-export type SkillKey = 'woodcutting' | 'mining' | 'fishing' | 'agility';
+export type SkillKey = 'woodcutting' | 'mining' | 'fishing';
 
 export interface ItemDefinition {
   key: string;
@@ -20,7 +20,6 @@ export const skills: ReadonlyArray<{ key: SkillKey; name: string }> = [
   { key: 'woodcutting', name: 'Woodcutting' },
   { key: 'mining', name: 'Mining' },
   { key: 'fishing', name: 'Fishing' },
-  { key: 'agility', name: 'Agility' },
 ];
 
 export const items: Record<string, ItemDefinition> = {

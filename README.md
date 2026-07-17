@@ -156,14 +156,6 @@ src/infrastructure/     PostgreSQL and migration infrastructure
 db/migrations/          Ordered, versioned database schema migrations
 ```
 
-## Agility data sources and refresh process
-
-Agility course data is stored in a versioned local PostgreSQL catalogue. Normal Discord commands never request, scrape, or depend on the RuneScape Wiki. The initial local catalogue identifies the [RS3 Agility training page](https://runescape.wiki/w/Agility_training) as its source and keeps bot-balanced XP separate from source values.
-
-Wiki XP/hour figures are estimates, not guaranteed rewards; boosts, route efficiency, failures, gear, quests, and events can change them. Records marked `needsVerification` are excluded from training recommendations. Course rewards and chances are only shown when their source data has been reviewed; unknown values are not invented.
-
-The administrator Agility refresh command is deliberately preview-only until the deployment can retrieve and manually verify source data. A future approved refresh must use the MediaWiki API with a descriptive User-Agent, conservative rate limiting, `Retry-After` handling, cached revisions, a saved diff, and explicit confirmation before it can publish a new catalogue version.
-
 ## Phase 1 boundaries
 
 This release intentionally does not implement combat, bosses, quests, player trading, clans, a player-run market, pets, or a web dashboard. Future features should add content/rules through the domain and application layers rather than placing game logic in Discord command handlers.
