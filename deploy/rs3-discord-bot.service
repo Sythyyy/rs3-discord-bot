@@ -1,0 +1,22 @@
+[Unit]
+Description=RS3-inspired Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=rs3bot
+Group=rs3bot
+WorkingDirectory=/opt/rs3-discord-bot
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/rs3-discord-bot/dist/index.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/opt/rs3-discord-bot
+
+[Install]
+WantedBy=multi-user.target
