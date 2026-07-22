@@ -1,7 +1,14 @@
-node_modules/
-dist/
 .env
 .env.*
 !.env.example
-coverage/
+node_modules/
+dist/
 *.log
+logs/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+coverage/

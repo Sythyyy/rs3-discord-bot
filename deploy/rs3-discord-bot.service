@@ -1,22 +1,23 @@
 [Unit]
 Description=RS3-inspired Discord Bot
-After=network.target
+After=network-online.target postgresql.service
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=rs3bot
-Group=rs3bot
-WorkingDirectory=/opt/rs3-discord-bot
+User=tj
+Group=tj
+WorkingDirectory=/home/tj/rs3-bot
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node /opt/rs3-discord-bot/dist/index.js
+EnvironmentFile=/home/tj/rs3-bot/.env
+ExecStart=/home/tj/.nvm/versions/node/v22.23.1/bin/node /home/tj/rs3-bot/dist/index.js
 Restart=always
 RestartSec=5
 TimeoutStopSec=30
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectHome=true
+ProtectHome=read-only
 ProtectSystem=full
-ReadWritePaths=/opt/rs3-discord-bot
 
 [Install]
 WantedBy=multi-user.target

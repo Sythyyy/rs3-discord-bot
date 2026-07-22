@@ -1,56 +1,144 @@
-export type SkillKey = 'woodcutting' | 'mining' | 'fishing';
+import { trees } from '../domain/woodcutting/catalogue.js';
+import { hatchets } from '../domain/woodcutting/hatchets.js';
+
+export const skillKeys = [
+  'attack',
+  'constitution',
+  'mining',
+  'strength',
+  'agility',
+  'smithing',
+  'defence',
+  'herblore',
+  'fishing',
+  'ranged',
+  'thieving',
+  'cooking',
+  'prayer',
+  'crafting',
+  'firemaking',
+  'magic',
+  'fletching',
+  'woodcutting',
+  'runecrafting',
+  'slayer',
+  'farming',
+  'construction',
+  'hunter',
+  'summoning',
+  'dungeoneering',
+  'divination',
+  'invention',
+  'archaeology',
+  'necromancy',
+] as const;
+
+export type SkillKey = (typeof skillKeys)[number];
 
 export interface ItemDefinition {
   key: string;
   name: string;
   description: string;
-  sellPrice: bigint;
+  sellPrice?: bigint;
+  iconFile: string;
+  imageSourceUrl?: string;
+  buyPrice?: bigint;
 }
 
 export interface ActivityDefinition {
   key: string;
   name: string;
   skill: SkillKey;
-  durationMs: number;
+  requiredLevel: number;
+  durationMs?: number;
+  minDurationMs?: number;
+  maxDurationMs?: number;
   xp: bigint;
+  baseQuantity: bigint;
+  inputs?: ReadonlyArray<{ itemKey: string; quantity: bigint }>;
+  requiredItems?: ReadonlyArray<string>;
+  requiredSkills?: ReadonlyArray<{ skill: SkillKey; level: number }>;
   rewards: ReadonlyArray<{ itemKey: string; quantity: bigint }>;
+  isQuest?: boolean;
 }
 
-export const skills: ReadonlyArray<{ key: SkillKey; name: string }> = [
-  { key: 'woodcutting', name: 'Woodcutting' },
-  { key: 'mining', name: 'Mining' },
-  { key: 'fishing', name: 'Fishing' },
-];
+export const skills: ReadonlyArray<{ key: SkillKey; name: string }> = skillKeys.map((key) => ({
+  key,
+  name: key.slice(0, 1).toUpperCase() + key.slice(1),
+}));
 
-export const items: Record<string, ItemDefinition> = {
-  driftwood: { key: 'driftwood', name: 'Driftwood', description: 'Weathered timber from the coast.', sellPrice: 6n },
-  copper_ore: { key: 'copper_ore', name: 'Copper ore', description: 'A common reddish ore.', sellPrice: 8n },
-  river_fish: { key: 'river_fish', name: 'River fish', description: 'A fresh catch from a quiet river.', sellPrice: 7n },
-  bronze_hatchet: { key: 'bronze_hatchet', name: 'Bronze hatchet', description: 'A dependable starter tool.', sellPrice: 40n },
-};
-export const activities: Record<string, ActivityDefinition> = {
-  gather_driftwood: {
-    key: 'gather_driftwood',
-    name: 'Gather driftwood',
+const item = (
+  key: string,
+  name: string,
+  description: string,
+  sellPrice: bigint | undefined,
+  iconFile = `${key}.png`,
+  buyPrice?: bigint,
+): ItemDefinition => ({ key, name, description, sellPrice, iconFile, buyPrice });
+
+export const items: Record<string, ItemDefinition> = Object.fromEntries(
+  [
+    item('copper_ore', 'Copper ore', 'A common reddish ore.', 8n),
+    ...hatchets.map((hatchet) =>
+      item(hatchet.key, hatchet.name, 'A reusable Woodcutting tool.', undefined, hatchet.iconFile),
+    ),
+    ...trees.map((tree) =>
+      item(
+        tree.logKey,
+        tree.logName,
+        `Logs cut from a ${tree.name.toLowerCase()}.`,
+        undefined,
+        `woodcutting/${tree.logKey}.png`,
+      ),
+    ),
+  ].map((definition) => [definition.key, definition]),
+);
+
+const activityDefinitions: ActivityDefinition[] = [
+  ...trees.map((tree): ActivityDefinition => ({
+    key: `woodcutting_${tree.key}`,
+    name: `Chop ${tree.name.toLowerCase()}`,
     skill: 'woodcutting',
-    durationMs: 60_000,
-    xp: 25n,
-    rewards: [{ itemKey: 'driftwood', quantity: 3n }],
-  },
-  mine_copper: {
+    requiredLevel: tree.requiredLevel,
+    durationMs: Math.max(
+      1,
+      Math.round((Number(tree.xpPerLog) * 3_600_000) / 10 / tree.balance.baseXpPerHour),
+    ),
+    minDurationMs: Math.max(
+      1,
+      Math.round(((Number(tree.xpPerLog) * 3_600_000) / 10 / tree.balance.baseXpPerHour) * 0.9),
+    ),
+    maxDurationMs: Math.max(
+      1,
+      Math.round(((Number(tree.xpPerLog) * 3_600_000) / 10 / tree.balance.baseXpPerHour) * 1.1),
+    ),
+    xp: tree.xpPerLog,
+    baseQuantity: 1n,
+    rewards: [{ itemKey: tree.logKey, quantity: 1n }],
+  })),
+  {
     key: 'mine_copper',
     name: 'Mine copper',
     skill: 'mining',
+    requiredLevel: 1,
     durationMs: 60_000,
-    xp: 25n,
+    xp: 250n,
+    baseQuantity: 3n,
     rewards: [{ itemKey: 'copper_ore', quantity: 3n }],
   },
-  catch_river_fish: {
-    key: 'catch_river_fish',
-    name: 'Catch river fish',
-    skill: 'fishing',
-    durationMs: 60_000,
-    xp: 25n,
-    rewards: [{ itemKey: 'river_fish', quantity: 3n }],
+  {
+    key: 'questing',
+    name: 'Questing',
+    skill: 'dungeoneering',
+    requiredLevel: 1,
+    durationMs: 30 * 60_000,
+    xp: 0n,
+    baseQuantity: 1n,
+    rewards: [],
+    isQuest: true,
   },
-};
+];
+
+export const activities: Record<string, ActivityDefinition> = Object.fromEntries(
+  activityDefinitions.map((definition) => [definition.key, definition]),
+);

@@ -10,4 +10,6 @@ const route = env.DISCORD_GUILD_ID
   : Routes.applicationCommands(env.DISCORD_CLIENT_ID);
 
 await rest.put(route, { body: commandDefinitions });
-console.log(`Registered ${commandDefinitions.length} ${env.DISCORD_GUILD_ID ? 'guild' : 'global'} commands.`);
+console.log(
+  `Registered ${commandDefinitions.length} ${env.DISCORD_GUILD_ID ? 'guild' : 'global'} commands.`,
+);

@@ -1,30 +1,49 @@
-/**
- * RuneScape's standard skill XP formula, applied through level 120.
- * It yields canonical milestones such as level 99 at 13,034,431 XP and
- * level 120 at 104,273,167 XP. Virtual levels are intentionally not shown.
- */
-export const MAX_SKILL_LEVEL = 120;
+export const MAX_LEVEL = 120;
 
-export const xpForLevel = (level: number): bigint => {
-  if (!Number.isInteger(level) || level < 1 || level > MAX_SKILL_LEVEL) throw new Error('Level must be between 1 and 120.');
-  if (level === 1) return 0n;
+// XP is stored in tenths so activities can award fractional RuneScape XP.
+const XP_STORAGE_SCALE = 10n;
+
+function buildExperienceTable(): readonly bigint[] {
+  const thresholds: bigint[] = [0n];
   let points = 0;
-  let xp = 0;
-  for (let current = 1; current < level; current += 1) {
-    points += Math.floor(current + 300 * 2 ** (current / 7));
-    xp = Math.floor(points / 4);
+
+  for (let level = 1; level < MAX_LEVEL; level += 1) {
+    points += Math.floor(level + 300 * 2 ** (level / 7));
+    thresholds.push(BigInt(Math.floor(points / 4)) * XP_STORAGE_SCALE);
   }
-  return BigInt(xp);
-};
+
+  return thresholds;
+}
+
+export const EXPERIENCE_TABLE = buildExperienceTable();
+
+export function xpForLevel(level: number): bigint {
+  if (!Number.isInteger(level) || level < 1 || level > MAX_LEVEL)
+    throw new Error(`Level must be between 1 and ${MAX_LEVEL}.`);
+  return EXPERIENCE_TABLE[level - 1]!;
+}
 
 export function levelForXp(xp: bigint): number {
   if (xp < 0n) throw new Error('XP cannot be negative.');
-  for (let level = MAX_SKILL_LEVEL; level >= 1; level -= 1) {
-    if (xp >= xpForLevel(level)) return level;
+
+  let low = 0;
+  let high = EXPERIENCE_TABLE.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (EXPERIENCE_TABLE[middle]! <= xp) low = middle + 1;
+    else high = middle;
   }
-  return 1;
+
+  return Math.min(MAX_LEVEL, low);
 }
+
 export function xpForNextLevel(xp: bigint): bigint | null {
   const level = levelForXp(xp);
-  return level >= MAX_SKILL_LEVEL ? null : xpForLevel(level + 1) - xp;
+  return level >= MAX_LEVEL ? null : xpForLevel(level + 1) - xp;
+}
+
+export function formatXp(xp: bigint): string {
+  const whole = xp / XP_STORAGE_SCALE;
+  const decimal = xp % XP_STORAGE_SCALE;
+  return decimal === 0n ? whole.toString() : `${whole}.${decimal}`;
 }

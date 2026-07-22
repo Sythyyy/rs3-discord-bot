@@ -5,7 +5,10 @@ export type Queryable = Pick<Pool, 'query'> | Pick<PoolClient, 'query'>;
 export function createDatabase(connectionString: string): Pool {
   return new Pool({ connectionString, max: 10 });
 }
-export async function withTransaction<T>(pool: Pool, work: (client: PoolClient) => Promise<T>): Promise<T> {
+export async function withTransaction<T>(
+  pool: Pool,
+  work: (client: PoolClient) => Promise<T>,
+): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
