@@ -10,8 +10,8 @@ export default tseslint.config(
   {
     languageOptions: { globals: globals.node },
     rules: {
-      '@typescript-eslint/consistent-type-imports': 'error'
-    }
+      '@typescript-eslint/consistent-type-imports': 'error',
+    },
   },
-  prettier
+  prettier,
 );

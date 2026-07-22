@@ -1,0 +1,2 @@
+ALTER TABLE characters
+ADD COLUMN quest_points INTEGER NOT NULL DEFAULT 0 CHECK (quest_points BETWEEN 0 AND 473);

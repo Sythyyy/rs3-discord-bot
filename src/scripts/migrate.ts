@@ -1,10 +1,10 @@
 import { fileURLToPath } from 'node:url';
 
-import { loadEnvironment } from '../config/env.js';
+import { loadDatabaseEnvironment } from '../config/env.js';
 import { createDatabase } from '../infrastructure/database/database.js';
 import { runMigrations } from '../infrastructure/database/migrations.js';
 
-const env = loadEnvironment();
+const env = loadDatabaseEnvironment();
 const database = createDatabase(env.DATABASE_URL);
 const migrationsPath = fileURLToPath(new URL('../../db/migrations', import.meta.url));
 
